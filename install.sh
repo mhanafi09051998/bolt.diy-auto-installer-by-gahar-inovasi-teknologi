@@ -1,21 +1,23 @@
 #!/bin/bash
 set -e
 
-# ----------- CONFIGURASI -----------
-DOMAIN="$1"
+echo "⚡️ Bolt.DIY Auto Installer for Ubuntu VPS"
+
+# ----------- TANYA DOMAIN ----------
+read -rp "🌐 Masukkan domain Anda (sudah terhubung ke IP VPS): " DOMAIN
 PORT=5173
 EMAIL="admin@$DOMAIN"
 
-if [ -z "$DOMAIN" ]; then
-  echo "❌ Harap berikan domain. Contoh: sudo ./install.sh boltgahar.my.id"
+if [[ -z "$DOMAIN" ]]; then
+  echo "❌ Domain tidak boleh kosong. Coba lagi!"
   exit 1
 fi
 
-echo "🌐 Domain yang digunakan: $DOMAIN"
+echo "📍 Domain yang akan digunakan: $DOMAIN"
 sleep 1
 
 # ----------- INSTALL DEPENDENSI ----------
-echo "📦 Menginstal dependensi..."
+echo "📦 Menginstal dependensi sistem..."
 sudo apt update
 sudo apt remove -y docker docker.io containerd runc || true
 sudo apt install -y git nginx curl certbot python3-certbot-nginx ca-certificates gnupg lsb-release
@@ -33,14 +35,14 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 # ----------- CLONE BOLT.DIY ----------
-echo "🧬 Meng-clone Bolt.DIY..."
+echo "📥 Meng-clone repo Bolt.DIY..."
 git clone https://github.com/stackblitz-labs/bolt.diy.git || true
 cd bolt.diy
 
 # ----------- PATCH VITE.CONFIG.TS ----------
-echo "🔧 Patch vite.config.ts untuk allowedHosts..."
+echo "🔧 Menambahkan allowedHosts di vite.config.ts..."
 if grep -q "allowedHosts" vite.config.ts; then
-  echo "✅ allowedHosts sudah ada"
+  echo "✅ Konfigurasi sudah ada"
 else
   sed -i '/server: {/a\      allowedHosts: ['"'"$DOMAIN"'"'],' vite.config.ts
   sed -i '/server: {/a\      host: true,' vite.config.ts
@@ -55,7 +57,7 @@ PUBLIC_URL=https://$DOMAIN
 EOF
 
 # ----------- DOCKER COMPOSE ----------
-echo "📄 Membuat docker-compose.yml..."
+echo "🐳 Membuat docker-compose.yml..."
 cat > docker-compose.yml <<EOF
 services:
   bolt:
@@ -68,13 +70,13 @@ services:
     restart: always
 EOF
 
-# ----------- BUILD & RUN DOCKER ----------
-echo "🐳 Build & run Bolt..."
+# ----------- JALANKAN DOCKER ----------
+echo "🚀 Menjalankan Docker container..."
 sudo docker compose down || true
 sudo docker compose up -d --build
 
-# ----------- NGINX REVERSE PROXY ----------
-echo "🔀 Menyiapkan Nginx reverse proxy..."
+# ----------- KONFIGURASI NGINX ----------
+echo "🔁 Menyiapkan reverse proxy Nginx..."
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
     listen 80;
@@ -96,11 +98,11 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 
-# ----------- HTTPS LET'S ENCRYPT ----------
-echo "🔐 Mengaktifkan HTTPS dengan Certbot..."
+# ----------- AKTIFKAN HTTPS ----------
+echo "🔐 Mengaktifkan HTTPS melalui Let's Encrypt..."
 sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL --redirect
 
 # ----------- DONE ----------
 echo ""
-echo "✅ Bolt.DIY berhasil diinstal & dikonfigurasi!"
-echo "🌐 Akses sekarang di: https://$DOMAIN"
+echo "✅ Instalasi Bolt.DIY berhasil!"
+echo "🌍 Akses sekarang: https://$DOMAIN"
