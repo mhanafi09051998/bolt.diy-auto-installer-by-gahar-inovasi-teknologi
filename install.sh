@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "⚡️ Instalasi Otomatis Bolt.DIY untuk VPS Ubuntu oleh Gahar Inovasi Teknologi"
+echo "⚡️ Instalasi Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
 
 # --- Minta pengguna memasukkan nama domain ---
 read -rp "🌐 Masukkan nama domain Anda (yang sudah diarahkan ke IP VPS ini): " DOMAIN
@@ -48,7 +48,9 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 # --- Clone repo Bolt.DIY ---
 echo "📥 Mengunduh repo Bolt.DIY..."
 git clone https://github.com/stackblitz-labs/bolt.diy.git || true
-cd bolt.diy
+
+# --- Masuk ke direktori bolt.diy dan validasi ---
+cd bolt.diy || { echo "❌ Gagal masuk ke folder 'bolt.diy'. Pastikan repo berhasil di-clone."; exit 1; }
 
 # --- Edit vite.config.ts agar domain diizinkan ---
 echo "🔧 Menyesuaikan vite.config.ts..."
@@ -66,11 +68,10 @@ if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
   echo -e "\nexport default App;" >> "$APP_FILE"
 fi
 
-# --- Install dependensi proyek ---
-echo "📦 Memasang dependensi Node.js menggunakan pnpm..."
+# --- Install dependencies dan build aplikasi ---
+echo "📦 Memasang dependensi Node.js dengan pnpm..."
 pnpm install
 
-# --- Build aplikasi ---
 echo "🔨 Membangun aplikasi..."
 pnpm run build
 
