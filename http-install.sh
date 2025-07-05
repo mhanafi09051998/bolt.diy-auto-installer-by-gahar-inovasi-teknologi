@@ -1,31 +1,23 @@
 #!/bin/bash
 set -e
 
-echo "⚡ Installer Bolt.DIY Otomatis dengan Subdomain Acak oleh Gahar Inovasi Teknologi"
+echo "⚡ Installer Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
 
-# Meminta domain utama dari pengguna
-read -rp "🌐 Masukkan domain utama kamu (misal: boltgahar.my.id): " ROOT_DOMAIN
+# Meminta domain dari pengguna
+read -rp "🌐 Masukkan domain Anda (contoh: bolt.domainkamu.com): " DOMAIN
 PORT=5173
 
-if [[ -z "$ROOT_DOMAIN" ]]; then
+if [[ -z "$DOMAIN" ]]; then
   echo "❌ Domain wajib diisi. Proses dibatalkan."
   exit 1
 fi
 
-# Buat subdomain acak
-RANDOM_SUFFIX=$((RANDOM % 1000))
-SUBDOMAIN="demo-$RANDOM_SUFFIX"
-DOMAIN="$SUBDOMAIN.$ROOT_DOMAIN"
-EMAIL="admin@$ROOT_DOMAIN"
-
-echo "📍 Menggunakan subdomain acak: $DOMAIN"
-
-# Pastikan DNS A record sudah diarahkan ke IP VPS
+echo "📍 Menggunakan domain: $DOMAIN"
 
 # Instalasi dependensi sistem
 echo "📦 Memasang paket sistem..."
 sudo apt update
-sudo apt install -y curl git nginx certbot python3-certbot-nginx ca-certificates gnupg lsb-release
+sudo apt install -y curl git nginx ca-certificates gnupg lsb-release
 
 # Instalasi Node.js
 echo "🧠 Memasang Node.js versi LTS..."
@@ -57,39 +49,42 @@ git clone https://github.com/stackblitz-labs/bolt.diy.git || true
 
 cd bolt.diy || { echo "❌ Gagal masuk ke folder 'bolt.diy'. Proses dibatalkan."; exit 1; }
 
-# Patch vite.config.ts
-echo "🔧 Patch vite.config.ts..."
+# Patch vite.config.ts agar aman di mode produksi
+echo "🔧 Memodifikasi vite.config.ts..."
 sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
 
-# Tambahkan allowedHosts dan host: true
-echo "🌐 Menambahkan allowedHosts..."
+# Tambahkan allowedHosts dan host: true jika belum ada
+echo "🌐 Menambahkan domain ke allowedHosts di vite.config.ts..."
 if grep -q "allowedHosts" vite.config.ts; then
   echo "✅ allowedHosts sudah ada."
 else
   sed -i '/server: {/a\      host: true,' vite.config.ts
   sed -i '/server: {/a\      allowedHosts: ['"'"$DOMAIN"'"'],' vite.config.ts
+  echo "✅ Domain berhasil ditambahkan."
 fi
 
-# Tambahkan export default App
+# Tambahkan export default App jika belum ada
 APP_FILE="src/App.tsx"
 if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
-  echo "🛠️ Menambahkan 'export default App'..."
+  echo "🛠️ Menambahkan 'export default App' ke App.tsx..."
   echo -e "\nexport default App;" >> "$APP_FILE"
 fi
 
-# Install dan build
-echo "📦 Memasang dependensi & build..."
+# Instal dependensi dan build
+echo "📦 Memasang dependensi dan melakukan build..."
 pnpm install
 pnpm run build
 
-# File env
+# Membuat file .env.production
+echo "📝 Membuat file .env.production..."
 cat > .env.production <<EOF
 PORT=$PORT
 HOST=0.0.0.0
-PUBLIC_URL=https://$DOMAIN
+PUBLIC_URL=http://$DOMAIN
 EOF
 
-# Docker compose
+# Buat file docker-compose.yml
+echo "⚙️ Membuat file docker-compose.yml..."
 cat > docker-compose.yml <<EOF
 services:
   bolt:
@@ -102,11 +97,13 @@ services:
     restart: always
 EOF
 
-# Jalankan docker
+# Menjalankan container Docker
+echo "🚀 Menjalankan container Bolt dengan Docker..."
 sudo docker compose down || true
 sudo docker compose up -d --build
 
-# Nginx config
+# Konfigurasi Nginx reverse proxy tanpa SSL
+echo "🔁 Mengkonfigurasi Nginx (HTTP saja)..."
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
     listen 80;
@@ -128,12 +125,7 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 
-# Let's Encrypt
-echo "🔐 Mengaktifkan HTTPS via Let's Encrypt..."
-sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL --redirect || {
-  echo "⚠️ Gagal membuat sertifikat. Gunakan HTTP dulu di http://$DOMAIN"
-}
-
+# Selesai
 echo ""
-echo "✅ Instalasi selesai!"
-echo "🌐 Akses aplikasi Anda di: https://$DOMAIN"
+echo "✅ Instalasi selesai! (tanpa HTTPS)"
+echo "🌐 Akses aplikasi Anda di: http://$DOMAIN"
