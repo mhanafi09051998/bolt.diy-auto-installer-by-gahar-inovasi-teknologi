@@ -1,46 +1,39 @@
-```markdown
-# ⚡ Bolt.DIY Auto Installer
+
+# ⚡ Bolt.DIY Auto Installer by Gahar Inovasi Teknologi ID
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Bolt DIY](https://img.shields.io/badge/Bolt.DIY-Production%20Ready-blue)](https://github.com/stackblitz-labs/bolt.diy)
 
 🚀 Skrip `install.sh` ini akan secara otomatis menginstal [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy) di VPS Ubuntu Anda **dengan konfigurasi penuh**:
 
-- ✅ Auto install Docker + Docker Compose
+- ✅ Install Docker + Docker Compose
 - ✅ Clone & Build Bolt.DIY
-- ✅ Fix `vite.config.ts` (allow domain publik)
-- ✅ Nginx reverse proxy (port 5173)
-- ✅ HTTPS otomatis via Let’s Encrypt
-- ✅ Full production mode dalam 1 perintah!
+- ✅ Fix `vite.config.ts` agar domain publik bisa diakses
+- ✅ Setup Nginx reverse proxy
+- ✅ Aktifkan HTTPS via Let's Encrypt
+- ✅ Jalankan langsung dalam production mode
 
 ---
 
-## 🔧 Cara Instalasi
+## 🚀 Cara Cepat Menggunakan
 
-> 💡 Pastikan domain Anda sudah mengarah ke IP VPS Anda (menggunakan DNS A Record).
+```bash
+# 1. Clone repo ini
+git clone https://github.com/mhanafi09051998/bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id.git
+cd bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id
 
-1. **Upload `install.sh` ke VPS Anda**
-2. Jadikan executable:
+# 2. Jadikan installer executable
+chmod +x install.sh
 
-   ```bash
-   chmod +x install.sh
-   ```
+# 3. Jalankan installer
+sudo ./install.sh
+```
 
-3. Jalankan:
-
-   ```bash
-   sudo ./install.sh
-   ```
-
-4. Masukkan domain Anda saat diminta, contoh:
-
-   ```
-   🌐 Masukkan domain Anda (sudah terhubung ke IP VPS): boltgahar.my.id
-   ```
+> 💡 Saat dijalankan, Anda akan diminta memasukkan nama domain (misal: `boltgahar.my.id`).
 
 ---
 
-## 🌐 Hasil Akhir
+## 🌍 Hasil Akhir
 
 Setelah selesai, Anda bisa langsung akses Bolt.DIY melalui:
 
@@ -55,23 +48,26 @@ https://namadomainanda.com
 ```bash
 .
 ├── install.sh              # Skrip installer otomatis
-├── bolt.diy/               # Direktori hasil clone repo Bolt.DIY
-│   ├── vite.config.ts      # Sudah dimodifikasi untuk production host
-│   └── docker-compose.yml  # Sudah di-generate otomatis
+├── bolt.diy/               # Direktori hasil clone dari Bolt.DIY
+│   ├── vite.config.ts      # Sudah dimodifikasi otomatis
+│   └── docker-compose.yml  # Dihasilkan otomatis
 ```
 
 ---
 
 ## ❓ FAQ
 
+**Q: Apa yang dibutuhkan sebelum menjalankan ini?**  
+A: VPS Ubuntu (20.04/22.04), akses root, dan domain yang mengarah ke IP VPS Anda.
+
 **Q: Port berapa yang digunakan Bolt?**  
-A: Secara default menggunakan `5173`, lalu di-proxy melalui Nginx ke HTTPS port 443.
+A: Bolt jalan di port `5173`, tapi akan diakses lewat port `443` (HTTPS) via Nginx.
 
 **Q: Apakah ini development mode?**  
-A: Tidak. Skrip ini akan langsung menjalankan Bolt.DIY dalam *production mode*, siap pakai.
+A: Tidak. Ini langsung menjalankan dalam *production mode*.
 
-**Q: Apakah subdomain didukung?**  
-A: Ya, asal DNS sudah diarahkan ke IP VPS.
+**Q: Apakah subdomain juga bisa?**  
+A: Ya, asalkan DNS sudah diarahkan.
 
 ---
 
@@ -79,13 +75,13 @@ A: Ya, asal DNS sudah diarahkan ke IP VPS.
 
 Dibangun berdasarkan:
 - [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy)
-- [Vite](https://vitejs.dev/)
 - [Docker](https://docker.com/)
 - [Certbot](https://certbot.eff.org/)
+- [Vite](https://vitejs.dev/)
 
 ---
 
 ## 📜 License
 
-MIT License. Silakan gunakan dan modifikasi bebas 🔥
+MIT License. Silakan gunakan & modifikasi bebas 🔥
 ```
