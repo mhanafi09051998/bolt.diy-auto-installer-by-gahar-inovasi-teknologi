@@ -1,85 +1,110 @@
-# ⚡ Bolt.DIY Auto Installer by Gahar Inovasi Teknologi ID
+# ⚡ Auto Installer Bolt.DIY oleh Gahar Inovasi Teknologi 🇮🇩
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Bolt DIY](https://img.shields.io/badge/Bolt.DIY-Production%20Ready-blue)](https://github.com/stackblitz-labs/bolt.diy)
+Installer otomatis dan siap produksi untuk [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy) — antarmuka LLM open source dari StackBlitz.  
+Script ini mempermudah proses instalasi Bolt.DIY di VPS Ubuntu hanya dalam beberapa menit, menggunakan domain Anda sendiri, Docker, Nginx, dan SSL gratis dari Let's Encrypt.
 
-🚀 Skrip `install.sh` ini akan secara otomatis menginstal [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy) di VPS Ubuntu Anda **dengan konfigurasi penuh**:
-
-- ✅ Install Docker + Docker Compose
-- ✅ Clone & Build Bolt.DIY
-- ✅ Fix `vite.config.ts` agar domain publik bisa diakses
-- ✅ Setup Nginx reverse proxy
-- ✅ Aktifkan HTTPS via Let's Encrypt
-- ✅ Jalankan langsung dalam production mode
+> 💡 Dikembangkan oleh [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
 
 ---
 
-## 🚀 Cara Cepat Menggunakan
+## ✨ Fitur
+
+- 🔧 Otomatis pasang semua dependensi (Node.js, Docker, Nginx, Certbot)
+- ⚙️ Build Bolt.DIY langsung dari GitHub
+- 🌐 Konfigurasi domain Anda agar diizinkan di Vite
+- 🧶 Menggunakan `pnpm` untuk instalasi dependency yang cepat
+- 🔁 Konfigurasi reverse proxy Nginx secara otomatis
+- 🔐 Pasang SSL gratis dengan Let's Encrypt
+- 🧼 Aman dijalankan ulang tanpa error
+
+---
+
+## 🚀 Cara Install
+
+### ✅ Syarat VPS
+
+- Sistem operasi: Ubuntu 20.04 / 22.04+
+- Domain aktif yang sudah diarahkan ke IP VPS Anda (A record)
+- Akses root atau user `sudo`
+
+---
+
+### 🛠️ Langkah Instalasi
 
 ```bash
-# 1. Clone repo ini
 git clone https://github.com/mhanafi09051998/bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id.git
 cd bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id
-
-# 2. Jadikan installer executable
 chmod +x install.sh
-
-# 3. Jalankan installer
-sudo ./install.sh
+./install.sh
 ```
 
-> 💡 Saat dijalankan, Anda akan diminta memasukkan nama domain (misal: `boltgahar.my.id`).
+📝 Anda akan diminta untuk memasukkan domain. Setelah itu, semua proses berjalan otomatis.
 
 ---
 
-## 🌍 Hasil Akhir
+## 🌐 Setelah Instalasi
 
-Setelah selesai, Anda bisa langsung akses Bolt.DIY melalui:
+Bolt.DIY Anda akan tersedia di:
 
 ```
 https://namadomainanda.com
 ```
 
----
-
-## 📁 Struktur Proyek
+Untuk melihat log atau kontrol container:
 
 ```bash
-.
-├── install.sh              # Skrip installer otomatis
-├── bolt.diy/               # Direktori hasil clone dari Bolt.DIY
-│   ├── vite.config.ts      # Sudah dimodifikasi otomatis
-│   └── docker-compose.yml  # Dihasilkan otomatis
+cd bolt.diy
+sudo docker compose logs -f
+```
+
+Untuk memperbarui aplikasi:
+
+```bash
+cd bolt.diy
+git pull
+pnpm install
+pnpm run build
+sudo docker compose up -d --build
 ```
 
 ---
 
-## ❓ FAQ
+## ✅ Diuji Pada
 
-**Q: Apa yang dibutuhkan sebelum menjalankan ini?**  
-A: VPS Ubuntu (20.04/22.04), akses root, dan domain yang mengarah ke IP VPS Anda.
-
-**Q: Port berapa yang digunakan Bolt?**  
-A: Bolt jalan di port `5173`, tapi akan diakses lewat port `443` (HTTPS) via Nginx.
-
-**Q: Apakah ini development mode?**  
-A: Tidak. Ini langsung menjalankan dalam *production mode*.
-
-**Q: Apakah subdomain juga bisa?**  
-A: Ya, asalkan DNS sudah diarahkan.
+- Ubuntu 22.04 LTS
+- Node.js 20.x
+- Docker v25+
+- pnpm 9.x
+- Nginx + Certbot
 
 ---
 
-## ❤️ Credits
+## ℹ️ Tentang Bolt.DIY
 
-Dibangun berdasarkan:
-- [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy)
-- [Docker](https://docker.com/)
-- [Certbot](https://certbot.eff.org/)
-- [Vite](https://vitejs.dev/)
+Bolt.DIY adalah antarmuka open-source yang memungkinkan Anda mengakses berbagai LLM seperti OpenAI, Ollama, LM Studio, dan lainnya — dengan performa tinggi, tampilan modern, dan 100% kontrol di tangan Anda.
 
 ---
 
-## 📜 License
+## 🔐 Keamanan
 
-MIT License. Silakan gunakan & modifikasi bebas 🔥
+- SSL otomatis via Let's Encrypt
+- Reverse proxy menyembunyikan port internal
+- Container Docker terisolasi dan auto restart
+
+---
+
+## 📎 Lisensi
+
+Script auto installer ini open-source dan berlisensi MIT.
+
+Aplikasi asli oleh StackBlitz:
+> https://github.com/stackblitz-labs/bolt.diy
+
+Dikembangkan dan dimodifikasi oleh:
+> [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
+
+---
+
+## ❤️ Dukungan
+
+Silakan buka issue jika ada kendala, atau bintang ⭐ repo ini jika Anda merasa terbantu 🙌
