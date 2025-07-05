@@ -1,35 +1,32 @@
-# ⚡ Auto Installer Bolt.DIY oleh Gahar Inovasi Teknologi 🇮🇩
+# 🚀 Installer Otomatis Bolt.DIY (Mode Produksi)
 
-Installer otomatis dan siap produksi untuk [Bolt.DIY](https://github.com/stackblitz-labs/bolt.diy) — antarmuka LLM open source dari StackBlitz.  
-Script ini mempermudah proses instalasi Bolt.DIY di VPS Ubuntu hanya dalam beberapa menit, menggunakan domain Anda sendiri, Docker, Nginx, dan SSL gratis dari Let's Encrypt.
+**Bolt.DIY** adalah antarmuka LLM berbasis web yang dikembangkan oleh [StackBlitz Labs](https://github.com/stackblitz-labs/bolt.diy).  
+Proyek ini dibuat untuk memberikan UI ringan dan cepat bagi pengguna model LLM (seperti Ollama, OpenAI, LM Studio, dan lainnya).
 
-> 💡 Dikembangkan oleh [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
+🎯 Installer ini dirancang untuk digunakan di VPS (Ubuntu) dan langsung menjalankan Bolt.DIY secara **aman di mode produksi** (bukan development).
 
 ---
 
-## ✨ Fitur
+## 🔧 Fitur Installer
 
-- 🔧 Otomatis pasang semua dependensi (Node.js, Docker, Nginx, Certbot)
-- ⚙️ Build Bolt.DIY langsung dari GitHub
-- 🌐 Konfigurasi domain Anda agar diizinkan di Vite
-- 🧶 Menggunakan `pnpm` untuk instalasi dependency yang cepat
-- 🔁 Konfigurasi reverse proxy Nginx secara otomatis
-- 🔐 Pasang SSL gratis dengan Let's Encrypt
-- 🧼 Aman dijalankan ulang tanpa error
+✅ Instalasi otomatis (Node.js, pnpm, Docker, Nginx)  
+✅ Konfigurasi domain otomatis dengan Nginx  
+✅ HTTPS dengan Let's Encrypt  
+✅ Patch otomatis `vite.config.ts` agar tidak error  
+✅ Otomatis export default App.tsx  
+✅ Tanpa konfigurasi ulang manual
+
+---
+
+## ⚙️ Syarat VPS
+
+- Sistem operasi: **Ubuntu 20.04/22.04**
+- Akses `root`
+- Domain aktif yang sudah mengarah ke IP VPS (misalnya dari Cloudflare atau DNS lain)
 
 ---
 
 ## 🚀 Cara Install
-
-### ✅ Syarat VPS
-
-- Sistem operasi: Ubuntu 20.04 / 22.04+
-- Domain aktif yang sudah diarahkan ke IP VPS Anda (A record)
-- Akses root atau user `sudo`
-
----
-
-### 🛠️ Langkah Instalasi
 
 ```bash
 git clone https://github.com/mhanafi09051998/bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id.git
@@ -38,73 +35,57 @@ chmod +x install.sh
 ./install.sh
 ```
 
-📝 Anda akan diminta untuk memasukkan domain. Setelah itu, semua proses berjalan otomatis.
+Setelah menjalankan perintah di atas, Anda akan diminta memasukkan domain Anda:  
+Contoh: `bolt.namadomainkamu.com`
 
 ---
 
-## 🌐 Setelah Instalasi
+## 🌐 Akses Aplikasi
 
-Bolt.DIY Anda akan tersedia di:
+Setelah proses selesai, Anda dapat mengakses Bolt.DIY melalui:
 
 ```
-https://namadomainanda.com
-```
-
-Untuk melihat log atau kontrol container:
-
-```bash
-cd bolt.diy
-sudo docker compose logs -f
-```
-
-Untuk memperbarui aplikasi:
-
-```bash
-cd bolt.diy
-git pull
-pnpm install
-pnpm run build
-sudo docker compose up -d --build
+https://namadomainkamu.com
 ```
 
 ---
 
-## ✅ Diuji Pada
+## 📦 Dukungan LLM
 
-- Ubuntu 22.04 LTS
-- Node.js 20.x
-- Docker v25+
-- pnpm 9.x
-- Nginx + Certbot
+Bolt.DIY dapat terhubung dengan berbagai model LLM lokal & cloud:
 
----
-
-## ℹ️ Tentang Bolt.DIY
-
-Bolt.DIY adalah antarmuka open-source yang memungkinkan Anda mengakses berbagai LLM seperti OpenAI, Ollama, LM Studio, dan lainnya — dengan performa tinggi, tampilan modern, dan 100% kontrol di tangan Anda.
+- [x] OpenAI
+- [x] LM Studio
+- [x] Ollama
+- [x] Together AI
+- [x] Groq
+- [x] Model lainnya (dengan endpoint compatible)
 
 ---
 
-## 🔐 Keamanan
+## 🛡️ Keamanan
 
-- SSL otomatis via Let's Encrypt
-- Reverse proxy menyembunyikan port internal
-- Container Docker terisolasi dan auto restart
-
----
-
-## 📎 Lisensi
-
-Script auto installer ini open-source dan berlisensi MIT.
-
-Aplikasi asli oleh StackBlitz:
-> https://github.com/stackblitz-labs/bolt.diy
-
-Dikembangkan dan dimodifikasi oleh:
-> [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
+- Menggunakan HTTPS dari Let's Encrypt  
+- Hanya mendengarkan dari domain Anda (diblokir jika bukan host yang diizinkan)  
+- Dapat dikombinasikan dengan Cloudflare + WAF untuk keamanan maksimal
 
 ---
 
-## ❤️ Dukungan
+## 🙏 Kredit
 
-Silakan buka issue jika ada kendala, atau bintang ⭐ repo ini jika Anda merasa terbantu 🙌
+- 💡 Proyek asli oleh [StackBlitz Labs - bolt.diy](https://github.com/stackblitz-labs/bolt.diy)
+- 🔧 Diadaptasi & disederhanakan oleh [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
+
+---
+
+## ❤️ Donasi / Dukungan
+
+Jika Anda merasa terbantu oleh proyek ini, bantu kami dengan ⭐️ di GitHub, atau kopi virtual ☕ di link berikut:
+
+> 📬 Saweria: https://saweria.co/gaharinovasi
+
+---
+
+## 📜 Lisensi
+
+MIT License. Gunakan bebas untuk edukasi, riset, maupun produksi.
