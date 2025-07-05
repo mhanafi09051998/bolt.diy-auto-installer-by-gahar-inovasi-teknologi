@@ -84,4 +84,3 @@ Dibangun berdasarkan:
 ## 📜 License
 
 MIT License. Silakan gunakan & modifikasi bebas 🔥
-```
