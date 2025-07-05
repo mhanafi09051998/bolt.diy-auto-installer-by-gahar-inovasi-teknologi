@@ -3,8 +3,8 @@ set -e
 
 echo "⚡️ Instalasi Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
 
-# --- Minta pengguna memasukkan nama domain ---
-read -rp "🌐 Masukkan nama domain Anda (yang sudah diarahkan ke IP VPS ini): " DOMAIN
+# --- Minta domain dari user ---
+read -rp "🌐 Masukkan domain Anda (contoh: bolt.domainanda.com): " DOMAIN
 PORT=5173
 EMAIL="admin@$DOMAIN"
 
@@ -13,24 +13,23 @@ if [[ -z "$DOMAIN" ]]; then
   exit 1
 fi
 
-echo "📍 Menggunakan domain: $DOMAIN"
-sleep 1
+echo "📍 Domain yang digunakan: $DOMAIN"
 
-# --- Update sistem dan pasang dependensi utama ---
-echo "📦 Memasang dependensi sistem..."
+# --- Update dan install dependensi sistem ---
+echo "📦 Memasang dependensi..."
 sudo apt update
 sudo apt install -y curl git nginx certbot python3-certbot-nginx ca-certificates gnupg lsb-release
 
-# --- Pasang Node.js versi terbaru (LTS 20) ---
+# --- Node.js LTS ---
 echo "🧠 Memasang Node.js LTS..."
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# --- Pasang pnpm (pengganti npm yang lebih cepat) ---
+# --- Install pnpm ---
 echo "🧶 Memasang pnpm..."
 npm install -g pnpm
 
-# --- Pasang Docker & Docker Compose ---
+# --- Install Docker ---
 echo "🐳 Memasang Docker..."
 sudo apt remove -y docker docker.io containerd runc || true
 sudo mkdir -p /etc/apt/keyrings
@@ -45,46 +44,45 @@ echo \
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# --- Clone repo Bolt.DIY ---
-echo "📥 Mengunduh repo Bolt.DIY..."
+# --- Clone Bolt.DIY ---
+echo "📥 Clone repo bolt.diy..."
 git clone https://github.com/stackblitz-labs/bolt.diy.git || true
 
-# --- Masuk ke direktori bolt.diy dan validasi ---
-cd bolt.diy || { echo "❌ Gagal masuk ke folder 'bolt.diy'. Pastikan repo berhasil di-clone."; exit 1; }
+cd bolt.diy || { echo "❌ Gagal masuk ke folder bolt.diy"; exit 1; }
 
-# --- Edit vite.config.ts agar domain diizinkan ---
-echo "🔧 Menyesuaikan vite.config.ts..."
+# --- Patch vite.config.ts ---
+echo "🔧 Patch vite.config.ts untuk production..."
+sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
+
+# Tambahkan allowedHosts dan host ke server config jika belum ada
 if grep -q "allowedHosts" vite.config.ts; then
-  echo "✅ Domain sudah ditambahkan sebelumnya"
+  echo "✅ Domain sudah ada di vite.config.ts"
 else
   sed -i '/server: {/a\      allowedHosts: ['"'"$DOMAIN"'"'],' vite.config.ts
   sed -i '/server: {/a\      host: true,' vite.config.ts
 fi
 
-# --- Pastikan App.tsx punya export default ---
+# Tambah "export default App;" kalau belum ada
 APP_FILE="src/App.tsx"
 if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
-  echo "🛠️ Menambahkan 'export default App;' ke App.tsx..."
   echo -e "\nexport default App;" >> "$APP_FILE"
 fi
 
-# --- Install dependencies dan build aplikasi ---
-echo "📦 Memasang dependensi Node.js dengan pnpm..."
+# --- Install dependencies & build ---
+echo "📦 Install dependencies dan build..."
 pnpm install
-
-echo "🔨 Membangun aplikasi..."
 pnpm run build
 
-# --- Buat file .env.production ---
-echo "📝 Membuat file .env.production..."
+# --- .env.production ---
+echo "📝 Membuat .env.production..."
 cat > .env.production <<EOF
 PORT=$PORT
 HOST=0.0.0.0
 PUBLIC_URL=https://$DOMAIN
 EOF
 
-# --- Buat file docker-compose.yml ---
-echo "📄 Membuat docker-compose.yml..."
+# --- Docker Compose ---
+echo "⚙️ Membuat docker-compose.yml..."
 cat > docker-compose.yml <<EOF
 services:
   bolt:
@@ -97,13 +95,13 @@ services:
     restart: always
 EOF
 
-# --- Jalankan container docker ---
+# --- Jalankan Docker ---
 echo "🚀 Menjalankan container Bolt..."
 sudo docker compose down || true
 sudo docker compose up -d --build
 
-# --- Konfigurasi reverse proxy Nginx ---
-echo "🔁 Mengatur reverse proxy Nginx..."
+# --- Nginx reverse proxy ---
+echo "🔁 Mengatur Nginx reverse proxy..."
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
     listen 80;
@@ -125,11 +123,11 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 
-# --- Aktifkan HTTPS dengan Let's Encrypt ---
-echo "🔐 Mengaktifkan HTTPS (SSL) dengan Let's Encrypt..."
+# --- SSL Let's Encrypt ---
+echo "🔐 Mengaktifkan HTTPS dengan Let's Encrypt..."
 sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL --redirect
 
 # --- SELESAI ---
 echo ""
-echo "✅ Instalasi Bolt.DIY berhasil!"
-echo "🌐 Akses melalui: https://$DOMAIN"
+echo "✅ Instalasi selesai! Bolt.DIY bisa diakses di:"
+echo "🌐 https://$DOMAIN"
