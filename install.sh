@@ -4,7 +4,7 @@ set -e
 echo "⚡ Installer Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
 
 # Meminta domain dari pengguna
-read -rp "🌐 Masukkan domain Anda (contoh: bolt.domainanda.com): " DOMAIN
+read -rp "🌐 Masukkan domain Anda (contoh: bolt.domainkamu.com): " DOMAIN
 PORT=5173
 EMAIL="admin@$DOMAIN"
 
@@ -51,28 +51,28 @@ git clone https://github.com/stackblitz-labs/bolt.diy.git || true
 cd bolt.diy || { echo "❌ Gagal masuk ke folder 'bolt.diy'. Proses dibatalkan."; exit 1; }
 
 # Patch vite.config.ts agar aman di mode produksi
-echo "🔧 Melakukan patch pada vite.config.ts..."
+echo "🔧 Memodifikasi vite.config.ts..."
 sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
 
-# Menambahkan domain ke allowedHosts dan host: true
-echo "🌐 Menambahkan domain ke vite.config.ts..."
+# Tambahkan allowedHosts dan host: true jika belum ada
+echo "🌐 Menambahkan domain ke allowedHosts di vite.config.ts..."
 if grep -q "allowedHosts" vite.config.ts; then
-  echo "✅ allowedHosts sudah dikonfigurasi."
+  echo "✅ allowedHosts sudah ada."
 else
   sed -i '/server: {/a\      host: true,' vite.config.ts
   sed -i '/server: {/a\      allowedHosts: ['"'"$DOMAIN"'"'],' vite.config.ts
   echo "✅ Domain berhasil ditambahkan."
 fi
 
-# Menambahkan export default App ke App.tsx
+# Tambahkan export default App jika belum ada
 APP_FILE="src/App.tsx"
 if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
   echo "🛠️ Menambahkan 'export default App' ke App.tsx..."
   echo -e "\nexport default App;" >> "$APP_FILE"
 fi
 
-# Install dependensi dan build proyek
-echo "📦 Menginstal dependensi dan melakukan build..."
+# Instal dependensi dan build
+echo "📦 Memasang dependensi dan melakukan build..."
 pnpm install
 pnpm run build
 
@@ -84,7 +84,7 @@ HOST=0.0.0.0
 PUBLIC_URL=https://$DOMAIN
 EOF
 
-# Membuat docker-compose.yml
+# Buat file docker-compose.yml
 echo "⚙️ Membuat file docker-compose.yml..."
 cat > docker-compose.yml <<EOF
 services:
@@ -99,12 +99,12 @@ services:
 EOF
 
 # Menjalankan container Docker
-echo "🚀 Menjalankan container Docker untuk Bolt..."
+echo "🚀 Menjalankan container Bolt dengan Docker..."
 sudo docker compose down || true
 sudo docker compose up -d --build
 
 # Konfigurasi Nginx reverse proxy
-echo "🔁 Mengkonfigurasi Nginx reverse proxy..."
+echo "🔁 Mengkonfigurasi Nginx untuk reverse proxy..."
 sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
 server {
     listen 80;
@@ -126,11 +126,11 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 
-# Aktifkan HTTPS menggunakan Certbot
+# Aktifkan HTTPS dengan Let's Encrypt
 echo "🔐 Mengaktifkan HTTPS dengan Let's Encrypt..."
 sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL --redirect
 
 # Selesai
 echo ""
-echo "✅ Bolt.DIY berhasil diinstal dan siap digunakan!"
-echo "🌐 Akses di: https://$DOMAIN"
+echo "✅ Instalasi selesai!"
+echo "🌐 Akses aplikasi Anda di: https://$DOMAIN"
