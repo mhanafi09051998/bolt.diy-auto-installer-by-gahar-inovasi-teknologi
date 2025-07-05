@@ -23,3 +23,4 @@
 
    ```bash
    chmod +x install.sh
+   sudo ./install.sh domainanda.my.id
