@@ -55,12 +55,15 @@ sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
 
 # Tambahkan allowedHosts dan host: true jika belum ada
 echo "🌐 Menambahkan domain ke allowedHosts di vite.config.ts..."
-if grep -q "allowedHosts" vite.config.ts; then
-  echo "✅ allowedHosts sudah ada."
+if ! grep -q "allowedHosts" vite.config.ts; then
+  sed -i '/return {/a\
+    server: {\
+      host: true,\
+      allowedHosts: ["'"$DOMAIN"'"],\
+    },' vite.config.ts
+  echo "✅ Domain berhasil ditambahkan ke vite.config.ts"
 else
-  sed -i '/server: {/a\      host: true,' vite.config.ts
-  sed -i '/server: {/a\      allowedHosts: ['"'"$DOMAIN"'"'],' vite.config.ts
-  echo "✅ Domain berhasil ditambahkan."
+  echo "ℹ️ allowedHosts sudah ada di vite.config.ts"
 fi
 
 # Tambahkan export default App jika belum ada
