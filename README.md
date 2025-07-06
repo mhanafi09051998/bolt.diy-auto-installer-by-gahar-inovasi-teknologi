@@ -1,91 +1,43 @@
-# 🚀 Installer Otomatis Bolt.DIY (Mode Produksi)
+# 🧠 Bolt.DIY Installer Otomatis
 
-**Bolt.DIY** adalah antarmuka LLM berbasis web yang dikembangkan oleh [StackBlitz Labs](https://github.com/stackblitz-labs/bolt.diy).  
-Proyek ini dibuat untuk memberikan UI ringan dan cepat bagi pengguna model LLM (seperti Ollama, OpenAI, LM Studio, dan lainnya).
-
-🎯 Installer ini dirancang untuk digunakan di VPS (Ubuntu) dan langsung menjalankan Bolt.DIY secara **aman di mode produksi** (bukan development).
+Script **install.sh** ini memudahkan kamu untuk meng‑deploy aplikasi Bolt.DIY di Docker, sekaligus mengonfigurasi Nginx dan SSL Let's Encrypt secara otomatis. Hanya dengan beberapa baris perintah, website Bolt.DIY-mu langsung online dengan HTTPS! 🚀
 
 ---
 
-## 🔧 Fitur Installer
+## ✨ Fitur Utama
 
-✅ Instalasi otomatis (Node.js, pnpm, Docker, Nginx)  
-✅ Konfigurasi domain otomatis dengan Nginx  
-✅ HTTPS dengan Let's Encrypt  
-✅ Patch otomatis `vite.config.ts` agar tidak error  
-✅ Otomatis export default App.tsx  
-✅ Tanpa konfigurasi ulang manual
+1. **Instalasi Dependensi Otomatis**  
+   - Docker & Docker Compose  
+   - Nginx + Certbot (Let's Encrypt)  
+   - Node.js & PNPM  
 
----
+2. **Setup Bolt.DIY**  
+   - Clone repository resmi  
+   - Patch `vite.config.ts` untuk host & allowedHosts  
+   - Build aplikasi dengan PNPM  
 
-## ⚙️ Syarat VPS
+3. **Konfigurasi Docker Compose**  
+   - Membangun image lokal  
+   - Container restart otomatis  
 
-- Sistem operasi: **Ubuntu 20.04/22.04**
-- Akses `root`
-- Domain aktif yang sudah mengarah ke IP VPS (misalnya dari Cloudflare atau DNS lain)
-
----
-
-## 🚀 Cara Install
-
-```bash
-git clone https://github.com/mhanafi09051998/bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id.git
-cd bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id
-chmod +x install.sh
-./install.sh
-```
-
-Setelah menjalankan perintah di atas, Anda akan diminta memasukkan domain Anda:  
-Contoh: `bolt.namadomainkamu.com`
+4. **Reverse Proxy & SSL**  
+   - Konfigurasi Nginx untuk domain kustom  
+   - HTTPS otomatis dengan Let's Encrypt + redirect HTTP→HTTPS  
 
 ---
 
-## 🌐 Akses Aplikasi
+## 🛠️ Prasyarat
 
-Setelah proses selesai, Anda dapat mengakses Bolt.DIY melalui:
-
-```
-https://namadomainkamu.com
-```
+- **Ubuntu Server** (20.04 / 22.04 / 24.04)  
+- Akses **root** atau **sudo**  
+- DNS _A record_ sudah mengarah ke IP server
 
 ---
 
-## 📦 Dukungan LLM
+## 🚀 Cara Penggunaan
 
-Bolt.DIY dapat terhubung dengan berbagai model LLM lokal & cloud:
-
-- [x] OpenAI
-- [x] LM Studio
-- [x] Ollama
-- [x] Together AI
-- [x] Groq
-- [x] Model lainnya (dengan endpoint compatible)
-
----
-
-## 🛡️ Keamanan
-
-- Menggunakan HTTPS dari Let's Encrypt  
-- Hanya mendengarkan dari domain Anda (diblokir jika bukan host yang diizinkan)  
-- Dapat dikombinasikan dengan Cloudflare + WAF untuk keamanan maksimal
-
----
-
-## 🙏 Kredit
-
-- 💡 Proyek asli oleh [StackBlitz Labs - bolt.diy](https://github.com/stackblitz-labs/bolt.diy)
-- 🔧 Diadaptasi & disederhanakan oleh [Gahar Inovasi Teknologi](https://github.com/mhanafi09051998)
-
----
-
-## ❤️ Donasi / Dukungan
-
-Jika Anda merasa terbantu oleh proyek ini, bantu kami dengan ⭐️ di GitHub, atau kopi virtual ☕ di link berikut:
-
-> 📬 Saweria: https://saweria.co/gaharinovasi
-
----
-
-## 📜 Lisensi
-
-MIT License. Gunakan bebas untuk edukasi, riset, maupun produksi.
+1. **Clone repo**  
+   ```bash
+   git clone https://github.com/username/boltdiy-installer.git
+   cd boltdiy-installer
+   chmod +x install.sh
