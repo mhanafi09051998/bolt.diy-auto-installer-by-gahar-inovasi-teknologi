@@ -38,6 +38,6 @@ Script **install.sh** ini memudahkan kamu untuk meng‑deploy aplikasi Bolt.DIY 
 
 1. **Clone repo**  
    ```bash
-   git clone https://github.com/username/boltdiy-installer.git
+   git clone https://github.com/mhanafi09051998/bolt.diy-auto-installer-by-gahar-inovasi-teknologi-id
    cd boltdiy-installer
    chmod +x install.sh
