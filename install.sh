@@ -1,130 +1,80 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-echo "⚡ Installer Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
+# install.sh - Instalasi Ollama Web GUI (bundled) dengan Docker dan konfigurasi SSL Let's Encrypt melalui Nginx
+# Penggunaan: sudo bash install.sh
 
-# 1. Minta domain
-read -rp "🌐 Masukkan domain Anda (contoh: gaharinovasiteknologi.com): " DOMAIN
-# 2. Minta email untuk sertifikat
-read -rp "📧 Masukkan email Anda untuk sertifikat SSL: " USER_EMAIL
-PORT=5173
+set -euo pipefail
 
-if [[ -z "$DOMAIN" || -z "$USER_EMAIL" ]]; then
-  echo "❌ Domain dan email wajib diisi. Proses dibatalkan."
-  exit 1
-fi
+# 0. Meminta input domain dan email
+read -rp "Masukkan domain Anda (misal: gaharinovasiteknologi.com): " DOMAIN
+read -rp "Masukkan email untuk registrasi Let's Encrypt: " EMAIL
 
-echo "📍 Domain: $DOMAIN"
-echo "📨 Email SSL: $USER_EMAIL"
+# Konstanta
+WEBUI_IMAGE="ghcr.io/open-webui/open-webui:ollama"  # Open WebUI yang sudah dibundel dengan Ollama
+CONTAINER_NAME="open-webui"
+HOST_PORT=3000
+CONTAINER_PORT=8080
+NGINX_CONF="/etc/nginx/sites-available/${DOMAIN}.conf"
 
-# 3. Instalasi paket sistem dasar
-echo "📦 Memasang paket sistem..."
-sudo apt update
-sudo apt install -y curl git nginx ca-certificates gnupg lsb-release software-properties-common
+# 1. Update & instalasi dependensi
+echo "[*] Memperbarui sistem dan menginstal paket yang dibutuhkan..."
+apt-get update && apt-get upgrade -y
+apt-get install -y docker.io nginx certbot python3-certbot-nginx
 
-# 4. Instalasi Node.js & pnpm
-echo "🧠 Memasang Node.js & pnpm..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-npm install -g pnpm
+# 2. Aktifkan dan mulai Docker & Nginx
+echo "[*] Mengaktifkan dan memulai layanan Docker & Nginx..."
+systemctl enable docker.service nginx.service
+systemctl start docker.service nginx.service
 
-# 5. Instalasi Docker & Compose
-echo "🐳 Memasang Docker & Docker Compose..."
-sudo apt remove -y docker docker.io containerd runc || true
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+# 3. Jalankan Open WebUI (dengan Ollama) di Docker
+echo "[*] Menarik image Docker Open WebUI..."
+docker pull ${WEBUI_IMAGE}
 
-# 6. Clone Bolt.DIY
-echo "📥 Meng-clone repo Bolt.DIY..."
-git clone https://github.com/stackblitz-labs/bolt.diy.git || true
-cd bolt.diy || { echo "❌ Gagal masuk ke folder bolt.diy"; exit 1; }
+echo "[*] Menjalankan container Open-WebUI..."
+docker rm -f ${CONTAINER_NAME} >/dev/null 2>&1 || true
+docker run -d \
+  --name ${CONTAINER_NAME} \
+  --restart unless-stopped \
+  -p 127.0.0.1:${HOST_PORT}:${CONTAINER_PORT} \
+  ${WEBUI_IMAGE}
 
-# 7. Patch vite.config.ts
-echo "🔧 Memodifikasi vite.config.ts..."
-sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
-if ! grep -q "allowedHosts" vite.config.ts; then
-  sed -i '/return {/a\
-    server: {\
-      host: true,\
-      allowedHosts: ["'"$DOMAIN"'"],\
-    },' vite.config.ts
-fi
-
-# 8. Pastikan App.tsx export default
-APP_FILE="src/App.tsx"
-if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
-  echo -e "\nexport default App;" >> "$APP_FILE"
-fi
-
-# 9. Install & build
-echo "📦 Memasang dependensi & build..."
-pnpm install
-pnpm run build
-
-# 10. Buat .env.production
-cat > .env.production <<EOF
-PORT=$PORT
-HOST=0.0.0.0
-PUBLIC_URL=https://$DOMAIN
-EOF
-
-# 11. Buat docker-compose.yml
-cat > docker-compose.yml <<EOF
-services:
-  bolt:
-    build: .
-    container_name: bolt
-    ports:
-      - "$PORT:$PORT"
-    env_file:
-      - .env.production
-    restart: always
-EOF
-
-# 12. Jalankan container
-echo "🚀 Menjalankan container Docker..."
-sudo docker compose down || true
-sudo docker compose up -d --build
-
-# 13. Konfigurasi Nginx
-echo "🔁 Mengatur Nginx reverse proxy..."
-sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
+# 4. Konfigurasi Nginx sebagai reverse proxy
+echo "[*] Menulis konfigurasi Nginx untuk ${DOMAIN}..."
+cat > ${NGINX_CONF} <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name ${DOMAIN};
 
     location / {
-        proxy_pass http://localhost:$PORT;
+        proxy_pass http://127.0.0.1:${HOST_PORT};
         proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
     }
 }
 EOF
-sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
 
-# 14. Pasang Certbot & HTTPS
-echo "🔐 Memasang sertifikat SSL via Let's Encrypt..."
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx \
-  --non-interactive \
-  --agree-tos \
-  --email "$USER_EMAIL" \
-  -d "$DOMAIN"
+echo "[*] Mengaktifkan konfigurasi situs dan me-reload Nginx..."
+ln -sf ${NGINX_CONF} /etc/nginx/sites-enabled/
+nginx -t
+systemctl reload nginx
 
-# 15. Selesai
-echo ""
-echo "✅ Instalasi selesai! Bolt.DIY berjalan di:"
-echo "🌐 https://$DOMAIN"
+# 5. Mendapatkan dan menginstal sertifikat SSL dari Let's Encrypt
+echo "[*] Mengambil sertifikat SSL Let's Encrypt untuk ${DOMAIN}..."
+certbot --nginx --redirect -d ${DOMAIN} --non-interactive --agree-tos --email ${EMAIL}
+
+# 6. Reload akhir Nginx
+echo "[*] Me-reload Nginx dengan SSL..."
+systemctl reload nginx
+
+# 7. Ringkasan
+cat <<EOF
+
+Instalasi selesai! 🎉
+- Open WebUI + Ollama berjalan di Docker pada localhost:${HOST_PORT}
+- Dapat diakses di: https://${DOMAIN}/
+- Sertifikat SSL dikelola otomatis oleh Let's Encrypt
+
+EOF
