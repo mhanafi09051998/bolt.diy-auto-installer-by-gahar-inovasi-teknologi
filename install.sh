@@ -1,112 +1,75 @@
 #!/bin/bash
+# install.sh - Auto Install Bolt.diy on Ubuntu with SSL (manual input domain/email)
+# Pastikan dijalankan sebagai root/sudo!
+
 set -e
 
-echo "⚡ Installer Otomatis Bolt.DIY oleh Gahar Inovasi Teknologi"
+# --- Input manual domain dan email ---
+echo "Masukkan domain yang akan digunakan (contoh: boltgahar1.my.id):"
+read DOMAIN
+echo "Masukkan email valid untuk SSL (Let's Encrypt):"
+read EMAIL
+BOLT_DIR="/opt/bolt.diy"
 
-# 1. Minta domain
-read -rp "🌐 Masukkan domain Anda (contoh: gaharinovasiteknologi.com): " DOMAIN
-# 2. Minta email untuk sertifikat
-read -rp "📧 Masukkan email Anda untuk sertifikat SSL: " USER_EMAIL
-PORT=5173
-
-if [[ -z "$DOMAIN" || -z "$USER_EMAIL" ]]; then
-  echo "❌ Domain dan email wajib diisi. Proses dibatalkan."
+if [ -z "$DOMAIN" ] || [ -z "$EMAIL" ]; then
+  echo "Domain dan Email tidak boleh kosong! Keluar."
   exit 1
 fi
 
-echo "📍 Domain: $DOMAIN"
-echo "📨 Email SSL: $USER_EMAIL"
+# Update system
+apt update && apt upgrade -y
 
-# 3. Instalasi paket sistem dasar
-echo "📦 Memasang paket sistem..."
-sudo apt update
-sudo apt install -y curl git nginx ca-certificates gnupg lsb-release software-properties-common
+# Install dependencies
+apt install -y curl git nginx python3 python3-venv python3-pip certbot python3-certbot-nginx ufw
 
-# 4. Instalasi Node.js & pnpm
-echo "🧠 Memasang Node.js & pnpm..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo npm install -g pnpm
+# Open firewall (jika UFW aktif)
+ufw allow OpenSSH
+ufw allow 'Nginx Full'
+ufw --force enable
 
-# 5. Instalasi Docker & Compose
-echo "🐳 Memasang Docker & Docker Compose..."
-sudo apt remove -y docker docker.io containerd runc || true
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-  https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" \
-  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-# 6. Clone Bolt.DIY
-echo "📥 Meng-clone repo Bolt.DIY..."
-if [[ -d bolt.diy ]]; then
-  echo "🗂️  Folder bolt.diy sudah ada, melakukan pull..."
-  cd bolt.diy && git pull
-else
-  git clone https://github.com/stackblitz-labs/bolt.diy.git
-  cd bolt.diy || { echo "❌ Gagal masuk ke folder bolt.diy"; exit 1; }
+# Clone Bolt.diy
+if [ ! -d "$BOLT_DIR" ]; then
+  git clone https://github.com/bolt-diy/bolt.diy.git "$BOLT_DIR"
 fi
+cd "$BOLT_DIR"
 
-# 7. Patch vite.config.ts
-echo "🔧 Memodifikasi vite.config.ts..."
-sed -i "s/config.mode !== 'test'/config.mode === 'development'/g" vite.config.ts
-sed -i "/return {/a\\
-    server: {\\
-      host: true,\\
-      allowedHosts: [\"$DOMAIN\"],\\
-    }," vite.config.ts
+# Setup Python venv
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# 8. Pastikan App.tsx export default
-APP_FILE="src/App.tsx"
-if [[ -f "$APP_FILE" ]] && ! grep -q "export default App" "$APP_FILE"; then
-  echo -e "\nexport default App;" >> "$APP_FILE"
-fi
+# (Opsional) Setup config Bolt.diy
+cp -n .env.example .env
 
-# 9. Install & build
-echo "📦 Memasang dependensi & build..."
-pnpm install
-pnpm run build
+# Buat systemd service
+cat <<EOF >/etc/systemd/system/bolt.diy.service
+[Unit]
+Description=Bolt.diy FastAPI Server
+After=network.target
 
-# 10. Buat .env.production
-cat > .env.production <<EOF
-PORT=$PORT
-HOST=0.0.0.0
-PUBLIC_URL=https://$DOMAIN
+[Service]
+User=root
+WorkingDirectory=$BOLT_DIR
+ExecStart=$BOLT_DIR/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
-# 11. Buat docker-compose.yml
-cat > docker-compose.yml <<EOF
-services:
-  bolt:
-    build: .
-    container_name: bolt
-    ports:
-      - "$PORT:$PORT"
-    env_file:
-      - .env.production
-    restart: always
-EOF
+# Reload systemd & start service
+systemctl daemon-reload
+systemctl enable --now bolt.diy
 
-# 12. Jalankan container
-echo "🚀 Menjalankan container Docker..."
-sudo docker compose down || true
-sudo docker compose up -d --build
-
-# 13. Konfigurasi Nginx
-echo "🔁 Mengatur Nginx reverse proxy..."
-sudo tee /etc/nginx/sites-available/$DOMAIN > /dev/null <<EOF
+# Setup Nginx config
+cat <<EOF >/etc/nginx/sites-available/$DOMAIN
 server {
     listen 80;
     server_name $DOMAIN;
 
     location / {
-        proxy_pass http://localhost:$PORT;
-        proxy_http_version 1.1;
+        proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -114,20 +77,16 @@ server {
     }
 }
 EOF
-sudo ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
 
-# 14. Pasang Certbot & HTTPS
-echo "🔐 Memasang sertifikat SSL via Let's Encrypt..."
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx --redirect \
-  --non-interactive \
-  --agree-tos \
-  --email "$USER_EMAIL" \
-  -d "$DOMAIN"
+# Enable Nginx site
+ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
 
-# 15. Selesai
-echo ""
-echo "✅ Instalasi selesai! Bolt.DIY berjalan di:"
-echo "🌐 https://$DOMAIN"
+# Install SSL
+certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $EMAIL --redirect
+
+# Restart Nginx
+systemctl reload nginx
+
+echo "\n=== INSTALASI SELESAI ==="
+echo "Akses https://$DOMAIN sudah siap dengan SSL."
